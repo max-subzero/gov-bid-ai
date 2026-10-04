@@ -137,6 +137,12 @@ Ingests real-time procurement feeds from municipal and federal portals, executin
 - **Automated Opportunity Triage**: Instantly pipes incoming notices into `DisqualificationGuard` and `GapAnalyzer` to calculate fit scores and categorize bids into qualified and disqualified buckets.
 - **Ranked Opportunity Pipeline**: Filters opportunities against customizable qualification thresholds, exposing fatal barriers and required remediation actions.
 
+### 10. Enterprise REST API & Interactive Bid Console (`govbid.api`)
+Exposes all intelligence engines via a production-grade FastAPI microservice and single-page interactive browser console:
+- **REST Endpoints (`/api/v1`)**: RFC 7807 problem details error handling across `/parse`, `/check`, `/evaluate`, `/diff`, `/schedule-b`, `/pricing`, and `/triage`.
+- **Interactive Bid Console (`/console`)**: Zero-dependency, single-page dark-mode web application for browser-based RFP evaluation, real-time Schedule B sizing, and feed triage.
+- **Automated OpenAPI / Swagger Docs**: Live interactive API contract explorer and JSON schema documentation at `/docs` and `/redoc`.
+
 ---
 
 ## 🚀 Installation & Quick Start
@@ -213,6 +219,14 @@ govbid --json price tests/fixtures/sample_rfp.txt tests/fixtures/sample_staffing
 govbid --json scan tests/fixtures/sample_sam_gov_feed.json tests/fixtures/sample_vendor.json
 ```
 
+#### 10. Launch Enterprise REST API & Interactive Console
+```bash
+govbid serve --host 127.0.0.1 --port 8000
+# Open browser at:
+#   Console: http://127.0.0.1:8000/console
+#   Swagger: http://127.0.0.1:8000/docs
+```
+
 ---
 
 ## 🧪 Verification & Test Suite
@@ -223,7 +237,9 @@ GovBid AI includes a comprehensive test suite running across Python 3.10, 3.11, 
 python3 -m unittest discover -s tests -v
 ```
 
-All 54 test cases validate:
+All 66 test cases validate:
+- FastAPI REST endpoints, OpenAPI schemas, and RFC 7807 error responses.
+- Interactive Bid Console HTML rendering, root redirect, and sample feed routes.
 - SAM.gov v2 and NYC City Record feed ingestion, normalization, and automated opportunity triage.
 - Loaded labor rate calculations, statutory wage floor audits, and certified payroll declarations.
 - Schedule B M/WBE allocation plans, MBE/WBE demographic splits, deficit detection, and waiver memo generation.

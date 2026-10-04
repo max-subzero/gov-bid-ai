@@ -408,6 +408,20 @@ def cmd_scan(args: argparse.Namespace) -> None:
     print("=" * 76)
 
 
+def cmd_serve(args: argparse.Namespace) -> None:
+    """Launches the GovBid AI Enterprise REST API & Interactive Console server."""
+    try:
+        import uvicorn
+    except ImportError:
+        print("Error: 'uvicorn' is required to run the server. Install via 'pip install uvicorn'.", file=sys.stderr)
+        sys.exit(1)
+
+    print(f"Starting GovBid AI REST API & Console on http://{args.host}:{args.port}")
+    print(f"Interactive Web Console: http://{args.host}:{args.port}/console")
+    print(f"OpenAPI Documentation:   http://{args.host}:{args.port}/docs")
+    uvicorn.run("govbid.api.app:app", host=args.host, port=args.port, reload=args.reload)
+
+
 def main() -> None:
     """CLI entrypoint dispatcher."""
     parser = argparse.ArgumentParser(
@@ -471,6 +485,13 @@ def main() -> None:
     p_scan.add_argument("--source", choices=["auto", "sam_gov", "city_record"], default="auto", help="Portal source format")
     p_scan.add_argument("--min-score", type=float, default=0.0, help="Minimum fit score threshold to display")
     p_scan.set_defaults(func=cmd_scan)
+
+    # Subcommand: serve
+    p_serve = subparsers.add_parser("serve", help="Launch Enterprise REST API & Interactive Console server")
+    p_serve.add_argument("--host", default="127.0.0.1", help="Host interface to bind (default: 127.0.0.1)")
+    p_serve.add_argument("--port", type=int, default=8000, help="Port to bind (default: 8000)")
+    p_serve.add_argument("--reload", action="store_true", help="Enable auto-reload on code change")
+    p_serve.set_defaults(func=cmd_serve)
 
     args = parser.parse_args()
     args.func(args)

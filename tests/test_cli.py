@@ -122,6 +122,15 @@ class TestGovBidCLI(unittest.TestCase):
             self.assertEqual(data["total_scanned"], 2)
             self.assertEqual(len(data["ranked_opportunities"]), 2)
 
+    @patch("uvicorn.run")
+    def test_cli_serve(self, mock_uvicorn_run) -> None:
+        with patch("sys.argv", ["govbid", "serve", "--host", "127.0.0.1", "--port", "8000"]), patch("sys.stdout", new_callable=io.StringIO) as mock_out:
+            main()
+            out = mock_out.getvalue()
+            self.assertIn("Starting GovBid AI REST API & Console on http://127.0.0.1:8000", out)
+            self.assertIn("Interactive Web Console: http://127.0.0.1:8000/console", out)
+            mock_uvicorn_run.assert_called_once_with("govbid.api.app:app", host="127.0.0.1", port=8000, reload=False)
+
 
 if __name__ == "__main__":
     unittest.main()
