@@ -65,6 +65,13 @@ flowchart TD
         SB --> SBP["Schedule B Plan<br/><code>MBE/WBE Splits & Validation</code>"]
         SB --> WM["Part III Waiver Memo<br/><code>GFE Outreach Justification</code>"]
     end
+
+    subgraph Pricing["6. Commercial Pricing & Wage Compliance"]
+        D --> PE["PricingLaborEngine"]
+        SP["StaffingPlan JSON<br/><code>Roles, Wages, Hours</code>"] --> PE
+        PE --> FS["Fee Schedule<br/><code>Loaded Rates & Margins</code>"]
+        PE --> CPD["Certified Payroll Declaration<br/><code>LL 220 / Davis-Bacon Rider</code>"]
+    end
 ```
 
 ---
@@ -116,6 +123,13 @@ Automates municipal and state subcontractor compliance under NYC Local Law 1 and
 - **Intelligent Allocation Sizing (`--recommend`)**: Distributes mandatory targets evenly across qualified candidate partners.
 - **Statutory Waiver Memo Generator**: Scaffolds formal Schedule B Part III Pre-Bid Waiver Request memorandums complete with Good Faith Efforts (GFE) outreach logs.
 
+### 8. Commercial Pricing & Prevailing Wage Labor Modeler (`PricingLaborEngine`)
+Audits cost volumes, staffing plans, and statutory labor rate compliance:
+- **Statutory Wage Floor Validation**: Enforces minimum direct cash wages and supplemental fringe benefit rates under NY Labor Law § 220 / § 230 and Federal Davis-Bacon Act (DBA).
+- **Fully Loaded Rate Calculation**: Models direct labor, mandatory payroll taxes (FICA/FUTA/SUI), workers' compensation, general overhead (G&A), and corporate profit margins.
+- **Under-Pricing & Non-Responsive Deficit Detection**: Flags when proposed labor rates violate statutory floors, preventing illegal wage submissions and administrative disqualification.
+- **Certified Payroll Compliance Declaration**: Auto-generates the mandatory Certified Payroll & Wage Acknowledgment Declaration rider.
+
 ---
 
 ## 🚀 Installation & Quick Start
@@ -163,14 +177,23 @@ govbid schedule-b tests/fixtures/sample_rfp.txt tests/fixtures/sample_vendor.jso
 govbid schedule-b tests/fixtures/sample_rfp.txt tests/fixtures/sample_vendor.json --waiver-reason "Sole-source hardware" --waiver-memo
 ```
 
-#### 6. Generate Grounded Proposal Outline with Verified Citations
+#### 6. Audit Commercial Pricing & Prevailing Wage Labor Rates
+```bash
+govbid price tests/fixtures/sample_rfp.txt tests/fixtures/sample_staffing_plan.json
+# Generate formal Certified Payroll Compliance Declaration:
+govbid price tests/fixtures/sample_rfp.txt tests/fixtures/sample_staffing_plan.json \
+  --vendor-name "Soko Platform LLC" \
+  --certified-payroll
+```
+
+#### 7. Generate Grounded Proposal Outline with Verified Citations
 ```bash
 govbid outline tests/fixtures/sample_rfp.txt tests/fixtures/sample_vendor.json
 ```
 
-#### 7. Machine-Readable JSON Output (for CI/CD Gateways)
+#### 8. Machine-Readable JSON Output (for CI/CD Gateways)
 ```bash
-govbid --json schedule-b tests/fixtures/sample_rfp.txt tests/fixtures/sample_vendor.json
+govbid --json price tests/fixtures/sample_rfp.txt tests/fixtures/sample_staffing_plan.json
 ```
 
 ---
@@ -183,7 +206,8 @@ GovBid AI includes a comprehensive test suite running across Python 3.10, 3.11, 
 python3 -m unittest discover -s tests -v
 ```
 
-All 39 test cases validate:
+All 47 test cases validate:
+- Loaded labor rate calculations, statutory wage floor audits, and certified payroll declarations.
 - Schedule B M/WBE allocation plans, MBE/WBE demographic splits, deficit detection, and waiver memo generation.
 - Native PDF text extraction, metadata parsing, and stream error handling.
 - Addendum deadline extensions, threshold modification detection, and Q&A parsing.

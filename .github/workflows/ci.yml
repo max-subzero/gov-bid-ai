@@ -39,3 +39,4 @@ jobs:
           python -m govbid.cli evaluate tests/fixtures/sample_rfp.txt tests/fixtures/sample_vendor.json
           python -m govbid.cli diff tests/fixtures/sample_rfp.txt tests/fixtures/sample_addendum.txt
           python -m govbid.cli schedule-b tests/fixtures/sample_rfp.txt tests/fixtures/sample_vendor.json
+          python -m govbid.cli price tests/fixtures/sample_rfp.txt tests/fixtures/sample_staffing_plan.json

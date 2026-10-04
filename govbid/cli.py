@@ -7,8 +7,10 @@ from pathlib import Path
 from govbid.engines.addendum_diff import AddendumDiffEngine
 from govbid.engines.disqualification_guard import DisqualificationGuard
 from govbid.engines.gap_analyzer import GapAnalyzer
+from govbid.engines.pricing_engine import PricingLaborEngine
 from govbid.engines.proposal_grounder import ProposalGrounder
 from govbid.engines.schedule_b_allocator import ScheduleBAllocator
+from govbid.models.pricing import StaffingRequirement
 from govbid.models.rfp import ClauseCategory
 from govbid.models.vendor import VendorProfile
 from govbid.parsers.rfp_parser import RfpParser
@@ -268,6 +270,78 @@ def cmd_schedule_b(args: argparse.Namespace) -> None:
     print("=" * 72)
 
 
+def cmd_price(args: argparse.Namespace) -> None:
+    """Executes commercial pricing, labor rate loading, and prevailing wage compliance audit."""
+    parser = RfpParser()
+    rfp = parser.parse_file(args.rfp_file)
+
+    # Check prevailing wage mandate in RFP
+    prevailing_wage_mandated = any(
+        c.category == ClauseCategory.PREVAILING_WAGE for c in rfp.clauses
+    )
+
+    # Load staffing plan JSON
+    plan_path = Path(args.staffing_file)
+    if not plan_path.exists():
+        print(f"Error: Staffing plan file not found at '{args.staffing_file}'", file=sys.stderr)
+        sys.exit(1)
+
+    with open(plan_path, "r", encoding="utf-8") as f:
+        plan_data = json.load(f)
+
+    materials_and_odc = float(plan_data.get("materials_and_odc", 0.0))
+    staffing_items = [StaffingRequirement(**item) for item in plan_data.get("staffing", [])]
+
+    engine = PricingLaborEngine()
+    result = engine.build_fee_schedule(
+        solicitation_number=rfp.solicitation_number,
+        staffing=staffing_items,
+        prevailing_wage_mandated=prevailing_wage_mandated,
+        materials_and_odc=materials_and_odc,
+    )
+
+    if args.json:
+        print(result.model_dump_json(indent=2))
+        return
+
+    print("=" * 74)
+    print(f"COMMERCIAL PRICING & PREVAILING WAGE AUDIT: {result.solicitation_number}")
+    print("=" * 74)
+    status_str = "[COMPLIANT - ZERO STATUTORY DEFICITS]" if result.is_fully_compliant else "[NON-COMPLIANT - WAGE DEFICITS DETECTED]"
+    wage_badge = "MANDATORY (NY Labor Law § 220 / Davis-Bacon)" if result.prevailing_wage_mandated else "NOT MANDATED"
+    print(f"Prevailing Wage Requirement: {wage_badge}")
+    print(f"Compliance Status:           {status_str}")
+    print(f"Total Evaluated Bid Price:   ${result.total_contract_price:,.2f}")
+    print(f"  • Total Labor Subtotal:    ${result.total_labor_cost:,.2f} ({result.total_billable_hours:,.0f} Total Billable Hours)")
+    print(f"  • Materials & Direct ODC:  ${result.materials_and_odc:,.2f}")
+    print(f"  • Blended Labor Rate:      ${result.effective_blended_hourly_rate:,.2f}/hr")
+    print()
+
+    print(f"STAFFING FEE SCHEDULE BREAKDOWN ({len(result.staffing_breakdown)} Roles):")
+    for req in result.staffing_breakdown:
+        cat = req.labor_category
+        stat_badge = " [PREVAILING WAGE]" if cat.classification.value == "PREVAILING_WAGE_TRADE" else " [EXEMPT]"
+        comp_badge = "✓" if cat.is_compliant else "⚠️ DEFICIT"
+        print(f"  • {comp_badge} {cat.title}{stat_badge}")
+        print(f"    Rate:      ${cat.loaded_hourly_rate:,.2f}/hr (Base: ${cat.base_hourly_rate:,.2f} + Fringe: ${cat.fringe_hourly_rate:,.2f})")
+        if cat.statutory_minimum_floor > 0:
+            print(f"    Floor:     Legal Minimum Floor is ${cat.statutory_minimum_floor:,.2f}/hr")
+        print(f"    Subtotal:  ${req.subtotal_labor_cost:,.2f} ({req.headcount} staff × {req.total_hours:,.0f} hrs)")
+        print()
+
+    if result.compliance_alerts:
+        print("COMPLIANCE & LABOR LAW RISK ALERTS:")
+        for alert in result.compliance_alerts:
+            print(f"  ⚠️  {alert}")
+        print()
+
+    if args.certified_payroll:
+        vendor_name = args.vendor_name or "Prime Proposal Bidder"
+        print(engine.generate_certified_payroll_declaration(result, vendor_name=vendor_name))
+
+    print("=" * 74)
+
+
 def main() -> None:
     """CLI entrypoint dispatcher."""
     parser = argparse.ArgumentParser(
@@ -315,6 +389,14 @@ def main() -> None:
     p_sched.add_argument("--waiver-reason", type=str, default=None, help="Statutory justification for pre-bid waiver request")
     p_sched.add_argument("--waiver-memo", action="store_true", help="Generate formal Schedule B Part III Waiver Memorandum")
     p_sched.set_defaults(func=cmd_schedule_b)
+
+    # Subcommand: price
+    p_price = subparsers.add_parser("price", help="Calculate loaded labor rates and audit prevailing wage compliance")
+    p_price.add_argument("rfp_file", help="Path to RFP solicitation file (.pdf, .txt)")
+    p_price.add_argument("staffing_file", help="Path to staffing plan JSON")
+    p_price.add_argument("--vendor-name", type=str, default=None, help="Contractor company name for certified payroll declaration")
+    p_price.add_argument("--certified-payroll", action="store_true", help="Generate formal Certified Payroll Compliance Declaration")
+    p_price.set_defaults(func=cmd_price)
 
     args = parser.parse_args()
     args.func(args)

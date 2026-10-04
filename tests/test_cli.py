@@ -10,6 +10,7 @@ from govbid.cli import main
 FIXTURES_DIR = Path(__file__).parent / "fixtures"
 RFP_PATH = str(FIXTURES_DIR / "sample_rfp.txt")
 VENDOR_PATH = str(FIXTURES_DIR / "sample_vendor.json")
+STAFFING_PATH = str(FIXTURES_DIR / "sample_staffing_plan.json")
 
 
 class TestGovBidCLI(unittest.TestCase):
@@ -84,6 +85,24 @@ class TestGovBidCLI(unittest.TestCase):
             self.assertEqual(data["status"], "COMPLIANT")
             self.assertEqual(data["actual_mwbe_percentage"], 30.0)
             self.assertEqual(len(data["allocations"]), 2)
+
+    def test_cli_price(self) -> None:
+        with patch("sys.argv", ["govbid", "price", RFP_PATH, STAFFING_PATH]), patch("sys.stdout", new_callable=io.StringIO) as mock_out:
+            main()
+            out = mock_out.getvalue()
+            self.assertIn("COMMERCIAL PRICING & PREVAILING WAGE AUDIT: 85626P0001", out)
+            self.assertIn("Compliance Status:           [COMPLIANT - ZERO STATUTORY DEFICITS]", out)
+            self.assertIn("Field Telematics Installation Electrician", out)
+            self.assertIn("Principal Cloud Solutions Architect", out)
+
+    def test_cli_price_json(self) -> None:
+        with patch("sys.argv", ["govbid", "--json", "price", RFP_PATH, STAFFING_PATH]), patch("sys.stdout", new_callable=io.StringIO) as mock_out:
+            main()
+            data = json.loads(mock_out.getvalue())
+            self.assertEqual(data["solicitation_number"], "85626P0001")
+            self.assertTrue(data["is_fully_compliant"])
+            self.assertEqual(len(data["staffing_breakdown"]), 4)
+            self.assertEqual(data["total_billable_hours"], 13000.0)
 
 
 if __name__ == "__main__":
