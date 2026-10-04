@@ -1,0 +1,55 @@
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "govbid"
+version = "0.1.0"
+description = "Government Contract & RFP Compliance Intelligence Platform (NYC PASSPort / SAM.gov / DoD)"
+readme = "README.md"
+requires-python = ">=3.10"
+license = {text = "Apache-2.0"}
+authors = [
+    {name = "James Maxwell Ambenge", email = "james.ambenge@gmail.com"}
+]
+keywords = [
+    "govtech", "rfp", "procurement", "compliance", "nyc-passport", 
+    "dcas", "sam-gov", "disqualification-defense", "rag-grounding"
+]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers",
+    "Intended Audience :: Legal Industry",
+    "Topic :: Office/Business :: Financial :: Point-Of-Sale",
+    "License :: OSI Approved :: Apache Software License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+]
+dependencies = [
+    "pydantic>=2.0.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=7.4.0",
+    "pytest-cov>=4.1.0",
+    "black>=23.7.0",
+    "flake8>=6.1.0",
+    "mypy>=1.5.0",
+]
+
+[project.scripts]
+govbid = "govbid.cli:main"
+
+[project.urls]
+Homepage = "https://github.com/max-subzero/gov-bid-ai"
+Repository = "https://github.com/max-subzero/gov-bid-ai"
+Issues = "https://github.com/max-subzero/gov-bid-ai/issues"
+
+[tool.pytest.ini_options]
+minversion = "7.0"
+addopts = "-ra -q --strict-markers"
+testpaths = ["tests"]
+pythonpath = ["."]

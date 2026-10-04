@@ -1,0 +1,38 @@
+CITY OF NEW YORK
+DEPARTMENT OF CITYWIDE ADMINISTRATIVE SERVICES (DCAS)
+REQUEST FOR PROPOSALS (RFP)
+
+SOLICITATION TITLE: Automated Vehicle Location (AVL) & Fleet Telematics Software Platform
+PIN: 85626P0001
+ISSUED BY: City of New York DCAS Fleet Services
+PROPOSAL DUE DATE: November 15, 2026
+
+1. SCOPE OF SERVICES
+The Department of Citywide Administrative Services ("DCAS") is seeking an appropriately qualified vendor to provide enterprise telematics, real-time diagnostic trouble code (DTC) ingestion, automated fuel drift tracking, and exception reporting across 40,000 municipal vehicles operated by 75+ City agencies.
+
+2. MINIMUM PROPOSER QUALIFICATIONS
+Proposers must demonstrate a minimum of 5 years of prior experience deploying real-time telematics or enterprise IoT platforms. Failure to satisfy this threshold shall result in non-responsive disqualification.
+
+3. SPECIAL TERMS AND CONDITIONS & COMPLIANCE CLAUSES
+3.1 M/WBE Subcontracting Participation Goal:
+Pursuant to NYC Administrative Code § 6-129 and Local Law 1 of 2013, this solicitation establishes an M/WBE subcontracting goal of 30%. Non-M/WBE proposers must submit an approved Schedule B utilization plan demonstrating certified subcontractor partnerships.
+
+3.2 Prevailing Wage Mandate:
+Hardware field installations and maintenance services performed under this contract are strictly subject to prevailing wage schedules governed by NY Labor Law Section 220 and mandatory weekly certified payroll submissions.
+
+3.3 Insurance Requirements:
+The Contractor must maintain:
+- Commercial General Liability of $5,000,000 per occurrence.
+- Network Security and Cyber Liability Insurance of $2,000,000 per claim.
+
+3.4 Liquidated Damages:
+In the event Contractor fails to deploy telematics units within the approved milestone schedule, liquidated damages of $1,500 per day shall apply.
+
+3.5 Mandatory PASSPort Enrollment:
+All proposers must have an active, verified account in the City of New York Procurement and Sourcing Solutions Portal (PASSPort) prior to proposal submission.
+
+4. PROPOSAL EVALUATION CRITERIA
+Proposals shall be evaluated according to the following criteria:
+- Technical Architecture & Real-Time Ingestion: 40%
+- Organizational Capability & Past Performance: 30%
+- Cost & Fee Schedule: 30%

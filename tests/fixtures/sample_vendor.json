@@ -1,0 +1,42 @@
+{
+  "vendor_id": "VEND-AMBENGE-001",
+  "name": "Soko Platform & Infrastructure Solutions LLC",
+  "years_in_business": 6,
+  "insurance_general_liability": 5000000.0,
+  "insurance_cyber_liability": 2000000.0,
+  "bonding_capacity": 10000000.0,
+  "is_mwbe_certified": false,
+  "mwbe_subcontractor_network": true,
+  "prevailing_wage_compliant": true,
+  "certifications": [
+    "SOC 2 Type II Certified",
+    "AWS Certified Solutions Architect Professional",
+    "Kubernetes Certified Administrator"
+  ],
+  "active_registrations": [
+    "NYC_PASSPORT",
+    "SAM_GOV"
+  ],
+  "past_performance": [
+    {
+      "record_id": "PAST-DCAS-01",
+      "client_name": "City of New York DCAS",
+      "is_government": true,
+      "contract_value": 4500000.0,
+      "duration_years": 3.0,
+      "domain": "Fleet Telematics & Compliance",
+      "summary": "Designed and deployed real-time SQL/Looker compliance exception reporting across 40,000 municipal vehicles and 75 city agencies, eliminating manual spreadsheets and reconciling $80M in expenditures.",
+      "reference_contact": "dcas-fleet@dcas.nyc.gov"
+    },
+    {
+      "record_id": "PAST-SOKO-02",
+      "client_name": "Soko Ads Platform",
+      "is_government": false,
+      "contract_value": 3200000.0,
+      "duration_years": 2.0,
+      "domain": "Low-Latency Distributed Architecture",
+      "summary": "Engineered real-time bidding auction pipelines and sub-50ms data ingestion engine on AWS EKS and ClickHouse processing high-QPS telemetry.",
+      "reference_contact": "arch@sokoads.com"
+    }
+  ]
+}
