@@ -10,7 +10,7 @@ class ClauseDetector:
 
     # Regex patterns for high-risk procurement clauses
     MWBE_PATTERN = re.compile(
-        r"(?:M/WBE|MWBE|minority\s+and\s+women-owned|subcontracting)\s+goal(?:s)?\s*(?:of|is|:)?\s*([0-9]{1,2}(?:\.[0-9]+)?)\s*%",
+        r"(?:M/WBE|MWBE|minority\s+and\s+women-owned|subcontracting)\s+goal(?:s)?\s*(?:of|is|:|is\s+(?:hereby\s+)?(?:reduced|increased|amended|changed)\s+to)?\s*([0-9]{1,2}(?:\.[0-9]+)?)\s*%",
         re.IGNORECASE,
     )
     
@@ -20,12 +20,12 @@ class ClauseDetector:
     )
     
     LIABILITY_INSURANCE_PATTERN = re.compile(
-        r"(?:commercial\s+general\s+liability|general\s+liability|liability\s+coverage)\s*(?:of|in\s+the\s+amount\s+of|minimum\s+of)?\s*\$?\s*([0-9]{1,3}(?:,[0-9]{3})*(?:\.[0-9]+)?)\s*(million|\bm\b)?",
+        r"(?:commercial\s+general\s+liability|general\s+liability|liability\s+coverage)(?:\s+(?:insurance|coverage))?\s*(?:of|in\s+the\s+amount\s+of|minimum\s+of|is\s+(?:hereby\s+)?(?:reduced|increased|amended|changed)\s+to|to)?\s*\$?\s*([0-9]{1,3}(?:,[0-9]{3})*(?:\.[0-9]+)?)\s*(million|\bm\b)?",
         re.IGNORECASE,
     )
     
     CYBER_INSURANCE_PATTERN = re.compile(
-        r"(?:cyber\s+liability(?:\s+insurance)?|network\s+security\s+and\s+privacy|cyber\s+insurance)\s*(?:of|in\s+the\s+amount\s+of|minimum\s+of)?\s*\$?\s*([0-9]{1,3}(?:,[0-9]{3})*(?:\.[0-9]+)?)\s*(million|\bm\b)?",
+        r"(?:cyber\s+liability|network\s+security\s+and\s+privacy|cyber\s+insurance)(?:\s+(?:insurance|coverage))?\s*(?:of|in\s+the\s+amount\s+of|minimum\s+of|is\s+(?:hereby\s+)?(?:reduced|increased|amended|changed)\s+to|to)?\s*\$?\s*([0-9]{1,3}(?:,[0-9]{3})*(?:\.[0-9]+)?)\s*(million|\bm\b)?",
         re.IGNORECASE,
     )
 

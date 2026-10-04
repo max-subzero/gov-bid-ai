@@ -37,3 +37,4 @@ jobs:
         run: |
           python -m govbid.cli parse tests/fixtures/sample_rfp.txt
           python -m govbid.cli evaluate tests/fixtures/sample_rfp.txt tests/fixtures/sample_vendor.json
+          python -m govbid.cli diff tests/fixtures/sample_rfp.txt tests/fixtures/sample_addendum.txt

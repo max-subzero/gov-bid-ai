@@ -32,20 +32,27 @@ Responding to government Requests for Proposals (RFPs), Requests for Quotations 
 
 ```mermaid
 flowchart TD
-    subgraph Ingestion["1. Solicitation Ingest & Extraction"]
-        A["Raw RFP / RFQ Document<br/><code>PDF / DOCX / Text</code>"] --> B["RfpParser"]
+    subgraph Ingestion["1. Solicitation & Addendum Ingest"]
+        A["Raw RFP / Addendum<br/><code>PDF / DOCX / Text</code>"] --> P["PdfExtractor<br/><code>Native pypdf Stream Extraction</code>"]
+        P --> B["RfpParser"]
         B --> C["ClauseDetector<br/><code>Deterministic Regex & Rules</code>"]
         C --> D["ParsedRfp Schema<br/><code>Metadata, Rubric, Clauses</code>"]
     end
 
-    subgraph Defense["2. Disqualification & Gap Analysis"]
+    subgraph Addendum["2. Addendum Differential Analysis"]
+        D --> AD["AddendumDiffEngine<br/><code>Deadline & Clause Deltas</code>"]
+        ADD["Addendum File<br/><code>PDF / Text</code>"] --> AD
+        AD --> AR["Addendum Analysis<br/><code>Critical Changes & Q&A Pairs</code>"]
+    end
+
+    subgraph Defense["3. Disqualification & Gap Analysis"]
         D --> E["DisqualificationGuard"]
-        V["VendorProfile JSON<br/><code>Insurance, Tenue, Registrations</code>"] --> E
+        V["VendorProfile JSON<br/><code>Insurance, Tenure, Registrations</code>"] --> E
         E --> F["GapAnalyzer<br/><code>Go / No-Go Fit Score (0-100)</code>"]
         F --> G["Disqualification Report<br/><code>RFC 7807 Remediation Steps</code>"]
     end
 
-    subgraph Proposal["3. Grounded Proposal Synthesis"]
+    subgraph Proposal["4. Grounded Proposal Synthesis"]
         D --> H["ProposalGrounder"]
         V --> H
         H --> I["RAG Groundedness Evaluator<br/><code>Zero Hallucination Filter</code>"]
@@ -82,6 +89,18 @@ Eliminates AI hallucinations by ensuring every proposal section maps directly to
 - Scores narrative groundedness ($0.0 - 1.0$) against empirical past contract values, durations, and agency clients.
 - Generates proposal outlines with verifiable citations to specific contract IDs.
 
+### 5. Native Solicitation PDF Ingestion (`PdfExtractor`)
+Directly ingests complex municipal and federal procurement packets in native `.pdf` format:
+- Stream-based text extraction powered by `pypdf`.
+- Automatic stripping of page headers, footers, and null byte artifacts.
+- Metadata extraction (title, author, creation timestamp, page counts).
+
+### 6. Addendum & Amendment Differential Analysis (`AddendumDiffEngine`)
+Tracks post-issuance solicitation modifications and addenda:
+- **Deadline Extensions**: Detects changes to proposal due dates and computes schedule shifts.
+- **Contractual Threshold Deltas**: Automatically compares modified insurance limits, bonding tiers, and M/WBE quotas against baseline requirements.
+- **Q&A Clarification Extraction**: Parses official agency responses to bidder inquiries into structured Question/Answer pairs.
+
 ---
 
 ## 🚀 Installation & Quick Start
@@ -98,9 +117,11 @@ pip install .
 
 ### CLI Commands
 
-#### 1. Parse RFP and Extract Compliance Clauses
+#### 1. Parse RFP (.pdf or .txt) and Extract Compliance Clauses
 ```bash
 govbid parse tests/fixtures/sample_rfp.txt
+# or native PDF:
+govbid parse solicitation_packet.pdf
 ```
 
 #### 2. Run Pre-Flight Disqualification Audit
@@ -113,27 +134,34 @@ govbid check tests/fixtures/sample_rfp.txt tests/fixtures/sample_vendor.json
 govbid evaluate tests/fixtures/sample_rfp.txt tests/fixtures/sample_vendor.json
 ```
 
-#### 4. Generate Grounded Proposal Outline with Verified Citations
+#### 4. Analyze Addendum / Amendment Differential
+```bash
+govbid diff tests/fixtures/sample_rfp.txt tests/fixtures/sample_addendum.txt
+```
+
+#### 5. Generate Grounded Proposal Outline with Verified Citations
 ```bash
 govbid outline tests/fixtures/sample_rfp.txt tests/fixtures/sample_vendor.json
 ```
 
-#### 5. Machine-Readable JSON Output (for CI/CD Gateways)
+#### 6. Machine-Readable JSON Output (for CI/CD Gateways)
 ```bash
-govbid --json evaluate tests/fixtures/sample_rfp.txt tests/fixtures/sample_vendor.json
+govbid --json diff tests/fixtures/sample_rfp.txt tests/fixtures/sample_addendum.txt
 ```
 
 ---
 
 ## 🧪 Verification & Test Suite
 
-GovBid AI includes a zero-dependency test suite running across Python 3.10, 3.11, and 3.12:
+GovBid AI includes a comprehensive test suite running across Python 3.10, 3.11, and 3.12:
 
 ```bash
 python3 -m unittest discover -s tests -v
 ```
 
-All 19 test cases validate:
+All 30 test cases validate:
+- Native PDF text extraction, metadata parsing, and stream error handling.
+- Addendum deadline extensions, threshold modification detection, and Q&A parsing.
 - Regex clause detection across prevailing wage, insurance, and M/WBE goals.
 - Disqualification triggers for insurance, experience, and registration deficits.
 - Fit score boundaries and Go/Conditional-Go/No-Go decisions.

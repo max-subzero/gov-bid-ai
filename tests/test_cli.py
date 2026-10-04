@@ -49,5 +49,24 @@ class TestGovBidCLI(unittest.TestCase):
             self.assertTrue("PAST-DCAS-01" in out or "PAST-SOKO-02" in out)
 
 
+    def test_cli_diff(self) -> None:
+        addendum_path = str(FIXTURES_DIR / "sample_addendum.txt")
+        with patch("sys.argv", ["govbid", "diff", RFP_PATH, addendum_path]), patch("sys.stdout", new_callable=io.StringIO) as mock_out:
+            main()
+            out = mock_out.getvalue()
+            self.assertIn("ADDENDUM DIFFERENTIAL AUDIT", out)
+            self.assertIn("NEW SUBMISSION DEADLINE: December 1, 2026", out)
+            self.assertIn("Threshold Modified", out)
+
+    def test_cli_diff_json(self) -> None:
+        addendum_path = str(FIXTURES_DIR / "sample_addendum.txt")
+        with patch("sys.argv", ["govbid", "--json", "diff", RFP_PATH, addendum_path]), patch("sys.stdout", new_callable=io.StringIO) as mock_out:
+            main()
+            data = json.loads(mock_out.getvalue())
+            self.assertEqual(data["solicitation_number"], "85626P0001")
+            self.assertGreaterEqual(len(data["diff_items"]), 2)
+            self.assertEqual(len(data["qa_pairs"]), 3)
+
+
 if __name__ == "__main__":
     unittest.main()

@@ -26,6 +26,20 @@ class RfpParser:
     def __init__(self) -> None:
         self.detector = ClauseDetector()
 
+    def parse_file(self, file_path: str) -> ParsedRfp:
+        """Parses a solicitation document from a file path (.pdf, .txt, .md)."""
+        from pathlib import Path
+        path = Path(file_path)
+        if path.suffix.lower() == ".pdf":
+            from govbid.parsers.pdf_extractor import PdfExtractor
+            extractor = PdfExtractor()
+            text = extractor.extract_text_from_file(file_path)
+            return self.parse_text(text)
+        
+        with open(path, "r", encoding="utf-8") as f:
+            content = f.read()
+        return self.parse_text(content)
+
     def parse_text(self, content: str) -> ParsedRfp:
         """Parses raw text of a solicitation document into a structured ParsedRfp model."""
         # 1. Extract Solicitation Metadata

@@ -4,6 +4,7 @@ import argparse
 import json
 import sys
 from pathlib import Path
+from govbid.engines.addendum_diff import AddendumDiffEngine
 from govbid.engines.disqualification_guard import DisqualificationGuard
 from govbid.engines.gap_analyzer import GapAnalyzer
 from govbid.engines.proposal_grounder import ProposalGrounder
@@ -23,22 +24,10 @@ def load_vendor(vendor_path: str) -> VendorProfile:
     return VendorProfile(**data)
 
 
-def load_rfp(rfp_path: str) -> str:
-    """Reads raw RFP text or document content."""
-    path = Path(rfp_path)
-    if not path.exists():
-        print(f"Error: RFP file not found at '{rfp_path}'", file=sys.stderr)
-        sys.exit(1)
-    
-    with open(path, "r", encoding="utf-8") as f:
-        return f.read()
-
-
 def cmd_parse(args: argparse.Namespace) -> None:
-    """Executes RFP parsing and clause detection."""
-    content = load_rfp(args.rfp_file)
+    """Executes RFP parsing and clause detection (supports .pdf, .txt, .md)."""
     parser = RfpParser()
-    rfp = parser.parse_text(content)
+    rfp = parser.parse_file(args.rfp_file)
 
     if args.json:
         print(rfp.model_dump_json(indent=2))
@@ -65,11 +54,9 @@ def cmd_parse(args: argparse.Namespace) -> None:
 
 def cmd_check(args: argparse.Namespace) -> None:
     """Runs DisqualificationGuard against vendor profile."""
-    content = load_rfp(args.rfp_file)
-    vendor = load_vendor(args.vendor_file)
-    
     parser = RfpParser()
-    rfp = parser.parse_text(content)
+    rfp = parser.parse_file(args.rfp_file)
+    vendor = load_vendor(args.vendor_file)
     
     guard = DisqualificationGuard()
     findings = guard.evaluate(rfp, vendor)
@@ -95,11 +82,9 @@ def cmd_check(args: argparse.Namespace) -> None:
 
 def cmd_evaluate(args: argparse.Namespace) -> None:
     """Runs full Gap Analysis and produces Go/No-Go score."""
-    content = load_rfp(args.rfp_file)
-    vendor = load_vendor(args.vendor_file)
-    
     parser = RfpParser()
-    rfp = parser.parse_text(content)
+    rfp = parser.parse_file(args.rfp_file)
+    vendor = load_vendor(args.vendor_file)
     
     analyzer = GapAnalyzer()
     result = analyzer.analyze(rfp, vendor)
@@ -136,11 +121,9 @@ def cmd_evaluate(args: argparse.Namespace) -> None:
 
 def cmd_outline(args: argparse.Namespace) -> None:
     """Synthesizes proposal outline grounded in past performance."""
-    content = load_rfp(args.rfp_file)
-    vendor = load_vendor(args.vendor_file)
-    
     parser = RfpParser()
-    rfp = parser.parse_text(content)
+    rfp = parser.parse_file(args.rfp_file)
+    vendor = load_vendor(args.vendor_file)
     
     grounder = ProposalGrounder()
     outline = grounder.generate_grounded_outline(rfp, vendor)
@@ -158,6 +141,56 @@ def cmd_outline(args: argparse.Namespace) -> None:
             print(f"  • {c}")
 
 
+def cmd_diff(args: argparse.Namespace) -> None:
+    """Executes differential analysis comparing an Addendum to the baseline RFP."""
+    parser = RfpParser()
+    base_rfp = parser.parse_file(args.base_rfp)
+
+    # Read addendum content (support .pdf and .txt)
+    add_path = Path(args.addendum_file)
+    if not add_path.exists():
+        print(f"Error: Addendum file not found at '{args.addendum_file}'", file=sys.stderr)
+        sys.exit(1)
+
+    if add_path.suffix.lower() == ".pdf":
+        from govbid.parsers.pdf_extractor import PdfExtractor
+        addendum_content = PdfExtractor().extract_text_from_file(args.addendum_file)
+    else:
+        with open(add_path, "r", encoding="utf-8") as f:
+            addendum_content = f.read()
+
+    engine = AddendumDiffEngine()
+    result = engine.analyze_diff(base_rfp, addendum_content)
+
+    if args.json:
+        print(result.model_dump_json(indent=2))
+        return
+
+    print("=" * 70)
+    print(f"ADDENDUM DIFFERENTIAL AUDIT: {result.solicitation_number} - {result.addendum_identifier}")
+    print("=" * 70)
+    print(f"Summary: {result.summary}\n")
+
+    if result.new_submission_deadline:
+        print(f"📅 NEW SUBMISSION DEADLINE: {result.new_submission_deadline}\n")
+
+    if result.diff_items:
+        print(f"CONTRACTUAL MODIFICATIONS ({len(result.diff_items)}):")
+        for item in result.diff_items:
+            print(f"  [{item.severity.value}] {item.title}")
+            if item.original_value and item.revised_value:
+                print(f"    Original: {item.original_value}")
+                print(f"    Revised:  {item.revised_value}")
+            print(f"    Impact:   {item.explanation}\n")
+
+    if result.qa_pairs:
+        print(f"BIDDER QUESTIONS & OFFICIAL RESPONSES ({len(result.qa_pairs)}):")
+        for qa in result.qa_pairs:
+            print(f"  Q{qa.question_number}: {qa.question}")
+            print(f"  A{qa.question_number}: {qa.answer}\n")
+    print("=" * 70)
+
+
 def main() -> None:
     """CLI entrypoint dispatcher."""
     parser = argparse.ArgumentParser(
@@ -168,27 +201,33 @@ def main() -> None:
     subparsers = parser.add_subparsers(dest="command", required=True)
 
     # Subcommand: parse
-    p_parse = subparsers.add_parser("parse", help="Parse RFP and extract compliance clauses")
-    p_parse.add_argument("rfp_file", help="Path to raw RFP text/solicitation file")
+    p_parse = subparsers.add_parser("parse", help="Parse RFP (.pdf, .txt) and extract compliance clauses")
+    p_parse.add_argument("rfp_file", help="Path to RFP solicitation file (.pdf, .txt, .md)")
     p_parse.set_defaults(func=cmd_parse)
 
     # Subcommand: check
     p_check = subparsers.add_parser("check", help="Run Disqualification Guard check")
-    p_check.add_argument("rfp_file", help="Path to RFP file")
+    p_check.add_argument("rfp_file", help="Path to RFP file (.pdf, .txt)")
     p_check.add_argument("vendor_file", help="Path to vendor profile JSON")
     p_check.set_defaults(func=cmd_check)
 
     # Subcommand: evaluate
     p_eval = subparsers.add_parser("evaluate", help="Execute full Gap Analysis & Go/No-Go recommendation")
-    p_eval.add_argument("rfp_file", help="Path to RFP file")
+    p_eval.add_argument("rfp_file", help="Path to RFP file (.pdf, .txt)")
     p_eval.add_argument("vendor_file", help="Path to vendor profile JSON")
     p_eval.set_defaults(func=cmd_evaluate)
 
     # Subcommand: outline
     p_outline = subparsers.add_parser("outline", help="Synthesize grounded proposal outline with citations")
-    p_outline.add_argument("rfp_file", help="Path to RFP file")
+    p_outline.add_argument("rfp_file", help="Path to RFP file (.pdf, .txt)")
     p_outline.add_argument("vendor_file", help="Path to vendor profile JSON")
     p_outline.set_defaults(func=cmd_outline)
+
+    # Subcommand: diff
+    p_diff = subparsers.add_parser("diff", help="Analyze Addendum / Amendment differential against baseline RFP")
+    p_diff.add_argument("base_rfp", help="Path to baseline RFP file (.pdf, .txt)")
+    p_diff.add_argument("addendum_file", help="Path to addendum/amendment file (.pdf, .txt)")
+    p_diff.set_defaults(func=cmd_diff)
 
     args = parser.parse_args()
     args.func(args)

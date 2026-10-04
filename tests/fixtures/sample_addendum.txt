@@ -1,0 +1,30 @@
+CITY OF NEW YORK
+DEPARTMENT OF CITYWIDE ADMINISTRATIVE SERVICES (DCAS)
+ADDENDUM NO. 1
+
+SOLICITATION TITLE: Automated Vehicle Location (AVL) & Fleet Telematics Software Platform
+PIN: 85626P0001
+DATE OF ISSUANCE: October 20, 2026
+
+TO ALL PROSPECTIVE PROPOSERS:
+This Addendum No. 1 is hereby issued to modify the solicitation terms and answer bidder questions.
+
+1. PROPOSAL SUBMISSION DEADLINE EXTENSION
+The proposal submission deadline is hereby extended to December 1, 2026 at 2:00 PM EST.
+
+2. AMENDMENT TO SPECIAL TERMS AND CONDITIONS
+2.1 Commercial General Liability Insurance:
+Section 3.3 is hereby amended. The minimum required Commercial General Liability coverage is reduced to $2,000,000 per occurrence.
+
+2.2 Mandatory Pre-Proposal Conference:
+A mandatory pre-proposal conference shall be held virtually on October 25, 2026. Attendance is mandatory for all prime proposers.
+
+3. QUESTIONS AND OFFICIAL AGENCY ANSWERS
+Q1: Can telematics hardware installation be scheduled outside normal municipal operating hours?
+Answer: Yes. DCAS central repair facilities operate 24/7, and scheduled evening/weekend installations are encouraged to minimize out-of-service vehicle downtime.
+
+Q2: Does DCAS accept FedRAMP Moderate or AWS GovCloud environments for telematics data storage?
+Answer: Yes. FedRAMP Moderate and AWS GovCloud hosting environments fully satisfy City of New York cyber security standards.
+
+Q3: Will the City consider an M/WBE participation goal reduction if specialized diagnostic harness manufacturing is required?
+Answer: No. The 30% M/WBE subcontracting goal remains mandatory unless an approved Schedule B waiver is granted by the Agency Chief Contracting Officer.
