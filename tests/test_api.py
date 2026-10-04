@@ -163,6 +163,25 @@ class TestGovBidAPI(unittest.TestCase):
         self.assertEqual(data["qualified_count"], 2)
         self.assertEqual(data["disqualified_count"], 1)
 
+    def test_api_draft_proposal(self) -> None:
+        response = self.client.post(
+            "/api/v1/draft",
+            json={
+                "rfp_text": self.sample_rfp_text,
+                "vendor": self.sample_vendor,
+                "staffing": self.sample_staffing["staffing"],
+                "total_bid_amount": 4500000.0,
+                "materials_and_odc": 350000.0,
+            },
+        )
+        self.assertEqual(response.status_code, 200)
+        data = response.json()
+        self.assertEqual(data["solicitation_number"], "85626P0001")
+        self.assertEqual(len(data["sections"]), 5)
+        self.assertGreaterEqual(data["total_words"], 500)
+        self.assertGreaterEqual(data["total_citations"], 5)
+        self.assertIn("FORMAL PROPOSAL RESPONSE", data["full_markdown"])
+
     def test_rfc7807_validation_error_format(self) -> None:
         # Missing required 'text' field in ParseRequest
         response = self.client.post("/api/v1/parse", json={})

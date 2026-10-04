@@ -131,6 +131,29 @@ class TestGovBidCLI(unittest.TestCase):
             self.assertIn("Interactive Web Console: http://127.0.0.1:8000/console", out)
             mock_uvicorn_run.assert_called_once_with("govbid.api.app:app", host="127.0.0.1", port=8000, reload=False)
 
+    def test_cli_draft(self) -> None:
+        with patch("sys.argv", ["govbid", "draft", RFP_PATH, VENDOR_PATH, "--staffing-file", STAFFING_PATH]), patch("sys.stdout", new_callable=io.StringIO) as mock_out:
+            main()
+            out = mock_out.getvalue()
+            self.assertIn("SYNTHESIZED PROPOSAL RESPONSE: 85626P0001", out)
+            self.assertIn("Prime Contractor:    Soko Platform", out)
+            self.assertIn("Groundedness Score:  ", out)
+            self.assertIn("Readiness Status:    [SUBMISSION READY]", out)
+            self.assertIn("[SEC-01-EXECUTIVE-SUMMARY]", out)
+            self.assertIn("[SEC-05-COMMERCIAL-COST]", out)
+
+    def test_cli_draft_json(self) -> None:
+        with patch("sys.argv", ["govbid", "--json", "draft", RFP_PATH, VENDOR_PATH, "--staffing-file", STAFFING_PATH]), patch("sys.stdout", new_callable=io.StringIO) as mock_out:
+            main()
+            data = json.loads(mock_out.getvalue())
+            self.assertEqual(data["solicitation_number"], "85626P0001")
+            self.assertTrue(data["is_submission_ready"])
+            self.assertGreaterEqual(data["groundedness_score"], 0.75)
+            self.assertEqual(len(data["sections"]), 5)
+            self.assertGreater(data["total_words"], 500)
+
+
 
 if __name__ == "__main__":
     unittest.main()
+

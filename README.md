@@ -53,10 +53,10 @@ flowchart TD
     end
 
     subgraph Proposal["4. Grounded Proposal Synthesis"]
-        D --> H["ProposalGrounder"]
+        D --> H["ProposalSynthesizerEngine"]
         V --> H
         H --> I["RAG Groundedness Evaluator<br/><code>Zero Hallucination Filter</code>"]
-        I --> J["Grounded Outline<br/><code>Cited Past Performance</code>"]
+        I --> J["5-Section Proposal Response<br/><code>Grounded Citations & Markdown</code>"]
     end
 
     subgraph Mwbe["5. Schedule B M/WBE Subcontractor Allocator"]
@@ -139,9 +139,18 @@ Ingests real-time procurement feeds from municipal and federal portals, executin
 
 ### 10. Enterprise REST API & Interactive Bid Console (`govbid.api`)
 Exposes all intelligence engines via a production-grade FastAPI microservice and single-page interactive browser console:
-- **REST Endpoints (`/api/v1`)**: RFC 7807 problem details error handling across `/parse`, `/check`, `/evaluate`, `/diff`, `/schedule-b`, `/pricing`, and `/triage`.
-- **Interactive Bid Console (`/console`)**: Zero-dependency, single-page dark-mode web application for browser-based RFP evaluation, real-time Schedule B sizing, and feed triage.
+- **REST Endpoints (`/api/v1`)**: RFC 7807 problem details error handling across `/parse`, `/check`, `/evaluate`, `/diff`, `/schedule-b`, `/pricing`, `/triage`, and `/draft`.
+- **Interactive Bid Console (`/console`)**: Zero-dependency, single-page dark-mode web application for browser-based RFP evaluation, real-time Schedule B sizing, portal feed triage, and proposal drafting.
 - **Automated OpenAPI / Swagger Docs**: Live interactive API contract explorer and JSON schema documentation at `/docs` and `/redoc`.
+
+### 11. Grounded Proposal Prose Synthesizer (`ProposalSynthesizerEngine`)
+Automates the generation of publication-ready, 5-section government contract proposal response documents strictly grounded in verified past performance and compliance determinations:
+- **Section 1: Executive Summary & Statement of Understanding**: Cites active municipal (NYC PASSPort) and federal (SAM.gov) registry standing, general liability coverage, cyber risk binders, and bonding backing.
+- **Section 2: Technical Approach, Architecture & Scope of Work**: Tailors systems architecture, edge ingestion, data streams, and SLA commitments against solicitation evaluation criteria under NIST SP 800-53 and SOC 2 Type II controls.
+- **Section 3: Organizational Qualifications & Verified Past Performance**: Embeds empirical case studies with verified contract identifiers, values, performance durations, and agency client references.
+- **Section 4: Subcontractor Utilization Plan & Schedule B M/WBE Compliance**: Incorporates pre-vetted certified M/WBE subcontractor allocations, scope descriptions, and demographic splits under NYC Local Law 1 (or Part III Pre-Bid Waiver justifications).
+- **Section 5: Commercial Cost Proposal & Certified Payroll Compliance**: Integrates fully loaded staffing fee schedules, billable hour distributions, blended hourly rates, and the statutory Certified Payroll Declaration (NY Labor Law § 220 / Davis-Bacon Act).
+- **RAG Triad Groundedness Audit**: Continuously scores factual faithfulness ($0.0 - 1.0$) across synthesized claims, flagging ungrounded assertions and displaying submission readiness badges.
 
 ---
 
@@ -195,7 +204,7 @@ govbid schedule-b tests/fixtures/sample_rfp.txt tests/fixtures/sample_vendor.jso
 govbid price tests/fixtures/sample_rfp.txt tests/fixtures/sample_staffing_plan.json
 # Generate formal Certified Payroll Compliance Declaration:
 govbid price tests/fixtures/sample_rfp.txt tests/fixtures/sample_staffing_plan.json \
-  --vendor-name "Soko Platform LLC" \
+  --vendor-name "Jemo Platform LLC" \
   --certified-payroll
 ```
 
@@ -208,18 +217,30 @@ govbid scan tests/fixtures/sample_sam_gov_feed.json tests/fixtures/sample_vendor
 govbid scan tests/fixtures/sample_city_record_feed.json tests/fixtures/sample_vendor.json --min-score 70.0
 ```
 
-#### 8. Generate Grounded Proposal Outline with Verified Citations
+#### 8. Synthesize Complete Grounded Proposal Response Document
+```bash
+# Synthesize 5-section markdown proposal draft:
+govbid draft tests/fixtures/sample_rfp.txt tests/fixtures/sample_vendor.json \
+  --staffing-file tests/fixtures/sample_staffing_plan.json \
+  --output proposal_draft.md
+
+# Machine-readable JSON output with groundedness score:
+govbid --json draft tests/fixtures/sample_rfp.txt tests/fixtures/sample_vendor.json \
+  --staffing-file tests/fixtures/sample_staffing_plan.json
+```
+
+#### 9. Generate Grounded Proposal Outline with Verified Citations
 ```bash
 govbid outline tests/fixtures/sample_rfp.txt tests/fixtures/sample_vendor.json
 ```
 
-#### 9. Machine-Readable JSON Output (for CI/CD Gateways)
+#### 10. Machine-Readable JSON Output (for CI/CD Gateways)
 ```bash
 govbid --json price tests/fixtures/sample_rfp.txt tests/fixtures/sample_staffing_plan.json
 govbid --json scan tests/fixtures/sample_sam_gov_feed.json tests/fixtures/sample_vendor.json
 ```
 
-#### 10. Launch Enterprise REST API & Interactive Console
+#### 11. Launch Enterprise REST API & Interactive Console
 ```bash
 govbid serve --host 127.0.0.1 --port 8000
 # Open browser at:
@@ -237,7 +258,8 @@ GovBid AI includes a comprehensive test suite running across Python 3.10, 3.11, 
 python3 -m unittest discover -s tests -v
 ```
 
-All 66 test cases validate:
+All 71 test cases validate:
+- 5-section grounded proposal synthesis, RAG Triad groundedness auditing, and readiness gates.
 - FastAPI REST endpoints, OpenAPI schemas, and RFC 7807 error responses.
 - Interactive Bid Console HTML rendering, root redirect, and sample feed routes.
 - SAM.gov v2 and NYC City Record feed ingestion, normalization, and automated opportunity triage.

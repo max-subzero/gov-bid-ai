@@ -10,6 +10,7 @@ from govbid.engines.disqualification_guard import DisqualificationGuard
 from govbid.engines.gap_analyzer import GapAnalyzer
 from govbid.engines.pricing_engine import PricingLaborEngine
 from govbid.engines.proposal_grounder import ProposalGrounder
+from govbid.engines.proposal_synthesizer import ProposalSynthesizerEngine
 from govbid.engines.schedule_b_allocator import ScheduleBAllocator
 from govbid.models.pricing import StaffingRequirement
 from govbid.models.rfp import ClauseCategory
@@ -408,6 +409,60 @@ def cmd_scan(args: argparse.Namespace) -> None:
     print("=" * 76)
 
 
+def cmd_draft(args: argparse.Namespace) -> None:
+    """Synthesizes a complete grounded government proposal response document."""
+    parser = RfpParser()
+    rfp = parser.parse_file(args.rfp_file)
+    vendor = load_vendor(args.vendor_file)
+
+    staffing_items = None
+    if args.staffing_file:
+        plan_path = Path(args.staffing_file)
+        if plan_path.exists():
+            with open(plan_path, "r", encoding="utf-8") as f:
+                plan_data = json.load(f)
+            staffing_items = [StaffingRequirement(**item) for item in plan_data.get("staffing", [])]
+
+    synthesizer = ProposalSynthesizerEngine()
+    draft = synthesizer.synthesize_proposal(
+        rfp=rfp,
+        vendor=vendor,
+        staffing_plan=staffing_items,
+        total_bid_amount=args.bid_amount,
+        materials_and_odc=args.materials_odc,
+        waiver_reason=args.waiver_reason,
+    )
+
+    if args.output:
+        out_path = Path(args.output)
+        out_path.parent.mkdir(parents=True, exist_ok=True)
+        with open(out_path, "w", encoding="utf-8") as f:
+            f.write(draft.full_markdown)
+        print(f"Proposal draft successfully written to '{args.output}'.")
+
+    if args.json:
+        print(draft.model_dump_json(indent=2))
+        return
+
+    if not args.output:
+        print("=" * 76)
+        print(f"SYNTHESIZED PROPOSAL RESPONSE: {draft.solicitation_number} — {draft.solicitation_title}")
+        print("=" * 76)
+        print(f"Prime Contractor:    {draft.vendor_name}")
+        print(f"Issuing Agency:      {draft.issuing_agency}")
+        print(f"Groundedness Score:  {draft.groundedness_score * 100:.1f}% (RAG Triad Verification)")
+        print(f"Total Word Count:    {draft.total_words:,} words across {len(draft.sections)} sections")
+        print(f"Empirical Citations: {draft.total_citations} verified past performance & statutory citations")
+        status_badge = "[SUBMISSION READY]" if draft.is_submission_ready else "[ACTION REQUIRED - LOW GROUNDEDNESS]"
+        print(f"Readiness Status:    {status_badge}")
+        print()
+        for sec in draft.sections:
+            print(f"[{sec.section_id}] {sec.title} ({sec.word_count} words)")
+            if sec.citations:
+                print(f"   Citations: {', '.join(sec.citations[:4])}")
+        print("=" * 76)
+
+
 def cmd_serve(args: argparse.Namespace) -> None:
     """Launches the GovBid AI Enterprise REST API & Interactive Console server."""
     try:
@@ -485,6 +540,17 @@ def main() -> None:
     p_scan.add_argument("--source", choices=["auto", "sam_gov", "city_record"], default="auto", help="Portal source format")
     p_scan.add_argument("--min-score", type=float, default=0.0, help="Minimum fit score threshold to display")
     p_scan.set_defaults(func=cmd_scan)
+
+    # Subcommand: draft
+    p_draft = subparsers.add_parser("draft", help="Synthesize complete grounded proposal response")
+    p_draft.add_argument("rfp_file", help="Path to RFP solicitation file (.pdf, .txt)")
+    p_draft.add_argument("vendor_file", help="Path to vendor profile JSON")
+    p_draft.add_argument("--staffing-file", default=None, help="Path to staffing plan JSON")
+    p_draft.add_argument("--bid-amount", type=float, default=None, help="Total proposal bid amount in USD")
+    p_draft.add_argument("--materials-odc", type=float, default=0.0, help="Materials and Other Direct Costs in USD")
+    p_draft.add_argument("--waiver-reason", type=str, default=None, help="Statutory justification for pre-bid waiver request")
+    p_draft.add_argument("--output", "-o", type=str, default=None, help="Output markdown file path to save full proposal")
+    p_draft.set_defaults(func=cmd_draft)
 
     # Subcommand: serve
     p_serve = subparsers.add_parser("serve", help="Launch Enterprise REST API & Interactive Console server")

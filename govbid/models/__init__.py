@@ -31,6 +31,7 @@ from govbid.models.pricing import (
     StatutoryWageSchedule,
     WageClassificationType,
 )
+from govbid.models.proposal import ProposalDraft, ProposalSection
 from govbid.models.rfp import ClauseCategory, ComplianceClause, EvaluationCriteria, ParsedRfp
 from govbid.models.vendor import PastPerformanceRecord, VendorProfile
 
@@ -66,4 +67,6 @@ __all__ = [
     "ParsedRfp",
     "PastPerformanceRecord",
     "VendorProfile",
+    "ProposalDraft",
+    "ProposalSection",
 ]

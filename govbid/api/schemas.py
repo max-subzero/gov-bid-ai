@@ -87,3 +87,15 @@ class TriageRequest(BaseModel):
     vendor: VendorProfile = Field(..., description="Vendor qualification profile")
     source: Optional[PortalSource] = Field(default=None, description="Portal feed source format (auto-detected if omitted)")
     min_score: float = Field(default=0.0, ge=0.0, le=100.0, description="Minimum fit score threshold")
+
+
+class DraftRequest(BaseModel):
+    """Payload for synthesizing a grounded proposal response."""
+    rfp_text: Optional[str] = Field(default=None, description="Raw solicitation text (if RFP not pre-parsed)")
+    rfp: Optional[ParsedRfp] = Field(default=None, description="Pre-parsed RFP schema")
+    vendor: VendorProfile = Field(..., description="Vendor qualification profile")
+    staffing: Optional[List[StaffingRequirement]] = Field(default=None, description="Optional staffing plan for cost volume")
+    total_bid_amount: Optional[float] = Field(default=None, gt=0, description="Total proposal bid amount in USD")
+    materials_and_odc: float = Field(default=0.0, ge=0.0, description="Materials and Other Direct Costs in USD")
+    waiver_reason: Optional[str] = Field(default=None, description="Statutory justification for pre-bid waiver request")
+

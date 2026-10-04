@@ -4,5 +4,5 @@ Engineered for municipal (NYC PASSPort / DCAS), state, and federal (SAM.gov / Do
 procurement evaluation, disqualification defense, and grounded proposal synthesis.
 """
 
-__version__ = "0.6.0"
+__version__ = "1.0.0"
 __author__ = "James Ambenge"

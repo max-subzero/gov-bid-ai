@@ -238,7 +238,7 @@ CONSOLE_HTML = """<!DOCTYPE html>
     <div class="brand">
       <div class="brand-logo">G</div>
       <div class="brand-title">GovBid AI</div>
-      <div class="brand-tag">v0.6.0 REST & Console</div>
+      <div class="brand-tag">v1.0.0 Enterprise</div>
     </div>
     <div style="font-size: 0.85rem; color: var(--text-muted);">
       Engineered by <strong>James Ambenge</strong> | Soko Ads Public Sector Group
@@ -251,6 +251,7 @@ CONSOLE_HTML = """<!DOCTYPE html>
     <button class="tab-btn" onclick="switchTab('schedule-b')">3. Schedule B M/WBE</button>
     <button class="tab-btn" onclick="switchTab('pricing')">4. Pricing & Prevailing Wage</button>
     <button class="tab-btn" onclick="switchTab('triage')">5. Portal Live Triage</button>
+    <button class="tab-btn" onclick="switchTab('draft')">6. Proposal Synthesizer</button>
   </nav>
 
   <main>
@@ -391,6 +392,47 @@ CONSOLE_HTML = """<!DOCTYPE html>
             <span id="triage-badge" class="badge">Ready</span>
           </div>
           <pre id="triage-output" class="output-box">// Ranked opportunities, qualified vs disqualified counts, and fatal barriers will render here.</pre>
+        </div>
+      </div>
+    </section>
+
+    <!-- TAB 6: PROPOSAL SYNTHESIZER -->
+    <section id="tab-draft" class="tab-content">
+      <div class="grid-2">
+        <div class="card">
+          <div class="card-header">
+            <span class="card-title">Proposal Drafting Inputs</span>
+            <span class="badge badge-go">RAG Triad Active</span>
+          </div>
+          <p style="font-size:0.85rem; color:var(--text-muted);">
+            Synthesizes all 5 formal compliance sections grounded in verified past performance records, Schedule B M/WBE quotas, and prevailing wage fee schedules.
+          </p>
+          <div style="display:flex; flex-direction:column; gap:0.75rem;">
+            <label style="font-size:0.85rem; color:var(--text-muted);">Total Proposal Bid Amount (USD):</label>
+            <input type="number" id="draft-bid-amount" value="4500000" />
+            <label style="font-size:0.85rem; color:var(--text-muted);">Materials & Direct ODC (USD):</label>
+            <input type="number" id="draft-materials-odc" value="350000" />
+            <label style="font-size:0.85rem; color:var(--text-muted);">Pre-Bid Waiver Justification (if applicable):</label>
+            <input type="text" id="draft-waiver" placeholder="Leave blank if meeting full goal" />
+          </div>
+          <div style="display:flex; justify-content:flex-end; margin-top:1rem;">
+            <button class="btn btn-primary" onclick="runDraft()">Synthesize Grounded Proposal Response &rarr;</button>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-header">
+            <span class="card-title">Proposal Document Preview</span>
+            <div style="display:flex; gap:0.5rem; align-items:center;">
+              <span id="draft-badge" class="badge">Ready</span>
+              <button class="btn" onclick="copyDraftMarkdown()">Copy Markdown</button>
+            </div>
+          </div>
+          <div id="draft-meta" style="font-size:0.85rem; color:var(--text-muted); display:flex; gap:1rem; flex-wrap:wrap;">
+            <span>Words: <strong id="draft-words" style="color:var(--text-main);">0</strong></span>
+            <span>Groundedness: <strong id="draft-groundedness" style="color:var(--text-main);">0%</strong></span>
+            <span>Citations: <strong id="draft-citations" style="color:var(--text-main);">0</strong></span>
+          </div>
+          <pre id="draft-output" class="output-box" style="max-height: 520px;">// Complete synthesized 5-section proposal narrative in Markdown will render here.</pre>
         </div>
       </div>
     </section>
@@ -711,6 +753,67 @@ Field installation technicians, wiremen, and electrical hardware specialists per
       } catch (err) {
         out.textContent = "Error: " + err.message;
       }
+    }
+
+    async function runDraft() {
+      const text = document.getElementById('rfp-input').value;
+      let vendor;
+      try {
+        vendor = JSON.parse(document.getElementById('vendor-input').value);
+      } catch (e) {
+        vendor = SAMPLE_VENDOR;
+      }
+      let staffing = null;
+      try {
+        const staffRaw = document.getElementById('staffing-json').value;
+        if (staffRaw && staffRaw.trim()) {
+          const parsed = JSON.parse(staffRaw);
+          staffing = parsed.staffing || null;
+        }
+      } catch (e) {
+        staffing = null;
+      }
+      const bid = parseFloat(document.getElementById('draft-bid-amount').value) || 4500000;
+      const odc = parseFloat(document.getElementById('draft-materials-odc').value) || 0;
+      const waiver = document.getElementById('draft-waiver').value || null;
+
+      const out = document.getElementById('draft-output');
+      out.textContent = "Synthesizing grounded proposal response across 5 compliance sections...";
+      try {
+        const res = await fetch('/api/v1/draft', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            rfp_text: text || SAMPLE_RFP,
+            vendor: vendor,
+            staffing: staffing,
+            total_bid_amount: bid,
+            materials_and_odc: odc,
+            waiver_reason: waiver
+          })
+        });
+        const data = await res.json();
+        out.textContent = data.full_markdown;
+        document.getElementById('draft-words').textContent = data.total_words.toLocaleString();
+        document.getElementById('draft-groundedness').textContent = (data.groundedness_score * 100).toFixed(1) + "%";
+        document.getElementById('draft-citations').textContent = data.total_citations;
+        const b = document.getElementById('draft-badge');
+        if (data.is_submission_ready) {
+          b.textContent = "SUBMISSION READY";
+          b.className = "badge badge-go";
+        } else {
+          b.textContent = "ACTION REQUIRED";
+          b.className = "badge badge-conditional";
+        }
+      } catch (err) {
+        out.textContent = "Error: " + err.message;
+      }
+    }
+
+    function copyDraftMarkdown() {
+      const text = document.getElementById('draft-output').textContent;
+      navigator.clipboard.writeText(text);
+      alert("Proposal Markdown copied to clipboard!");
     }
 
     // Initialize defaults on load

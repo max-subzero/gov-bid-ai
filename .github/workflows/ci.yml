@@ -42,3 +42,5 @@ jobs:
           python -m govbid.cli price tests/fixtures/sample_rfp.txt tests/fixtures/sample_staffing_plan.json
           python -m govbid.cli scan tests/fixtures/sample_sam_gov_feed.json tests/fixtures/sample_vendor.json
           python -m govbid.cli scan tests/fixtures/sample_city_record_feed.json tests/fixtures/sample_vendor.json
+          python -m govbid.cli draft tests/fixtures/sample_rfp.txt tests/fixtures/sample_vendor.json --staffing-file tests/fixtures/sample_staffing_plan.json
+

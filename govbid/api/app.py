@@ -15,6 +15,7 @@ from govbid.api.schemas import (
     CheckRequest,
     CheckResponse,
     DiffRequest,
+    DraftRequest,
     EvaluateRequest,
     HealthResponse,
     ParseRequest,
@@ -28,11 +29,13 @@ from govbid.engines.addendum_diff import AddendumDiffEngine
 from govbid.engines.disqualification_guard import DisqualificationGuard
 from govbid.engines.gap_analyzer import GapAnalyzer
 from govbid.engines.pricing_engine import PricingLaborEngine
+from govbid.engines.proposal_synthesizer import ProposalSynthesizerEngine
 from govbid.engines.schedule_b_allocator import ScheduleBAllocator
 from govbid.models.addendum import AddendumAnalysisResult
 from govbid.models.audit import GapAnalysisResult
 from govbid.models.mwbe import ScheduleBPlan
 from govbid.models.portal import PortalSource, PortalTriageReport
+from govbid.models.proposal import ProposalDraft
 from govbid.models.rfp import ParsedRfp
 from govbid.parsers.rfp_parser import RfpParser
 
@@ -235,6 +238,27 @@ def create_app() -> FastAPI:
             opportunities=opportunities,
             vendor=req.vendor,
             min_fit_score=req.min_score,
+        )
+
+    # API v1: Grounded Proposal Prose Synthesizer
+    @app.post("/api/v1/draft", response_model=ProposalDraft, tags=["Proposals"])
+    async def draft_proposal(req: DraftRequest) -> ProposalDraft:
+        if req.rfp is not None:
+            rfp = req.rfp
+        elif req.rfp_text:
+            parser = RfpParser()
+            rfp = parser.parse_text(req.rfp_text)
+        else:
+            raise HTTPException(status_code=400, detail="Either 'rfp' or 'rfp_text' must be provided.")
+
+        synthesizer = ProposalSynthesizerEngine()
+        return synthesizer.synthesize_proposal(
+            rfp=rfp,
+            vendor=req.vendor,
+            staffing_plan=req.staffing,
+            total_bid_amount=req.total_bid_amount,
+            materials_and_odc=req.materials_and_odc,
+            waiver_reason=req.waiver_reason,
         )
 
     return app
