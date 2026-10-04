@@ -1,0 +1,49 @@
+{
+  "totalRecords": 3,
+  "opportunitiesData": [
+    {
+      "noticeId": "fed-sam-opp-001",
+      "title": "DoD Fleet Telematics & IoT Diagnostic Software Platform",
+      "solicitationNumber": "W911NF-26-R-0042",
+      "fullParentPathName": "DEPT OF DEFENSE.DEPARTMENT OF THE ARMY.AMC.ACC",
+      "postedDate": "2026-10-01",
+      "responseDeadLine": "2026-11-30T17:00:00-05:00",
+      "type": "Solicitation",
+      "typeOfSetAside": "Total Small Business",
+      "naicsCode": "541512",
+      "uiLink": "https://sam.gov/opp/fed-sam-opp-001/view",
+      "description": "The US Army Contracting Command is seeking a small business vendor to deliver enterprise fleet telematics and real-time IoT diagnostic data ingestion across tactical and non-tactical vehicles. Proposers must demonstrate at least 5 years of prior experience deploying IoT telematics software and maintain cyber liability insurance of at least $2,000,000.",
+      "resourceLinks": [
+        "https://sam.gov/api/prod/opps/v3/opportunities/resources/files/solicitation_pkg.pdf"
+      ]
+    },
+    {
+      "noticeId": "fed-sam-opp-002",
+      "title": "US Treasury Core Financial Infrastructure Modernization",
+      "solicitationNumber": "2031ZA-26-R-0001",
+      "fullParentPathName": "DEPARTMENT OF THE TREASURY.INTERNAL REVENUE SERVICE",
+      "postedDate": "2026-09-28",
+      "responseDeadLine": "2026-12-15T15:00:00-05:00",
+      "type": "Solicitation",
+      "typeOfSetAside": "None",
+      "naicsCode": "541512",
+      "uiLink": "https://sam.gov/opp/fed-sam-opp-002/view",
+      "description": "Internal Revenue Service requires prime vendor to modernize mainframe accounting ledgers. Proposers must demonstrate a minimum of 15 years of prior experience managing sovereign transactional systems and maintain active SAM.gov registration. General liability of $10,000,000 is required.",
+      "resourceLinks": []
+    },
+    {
+      "noticeId": "fed-sam-opp-003",
+      "title": "GSA Municipal Fleet Diagnostic Sensors Pre-Solicitation",
+      "solicitationNumber": "47QTCA-26-Q-0199",
+      "fullParentPathName": "GENERAL SERVICES ADMINISTRATION.FAS.ITC",
+      "postedDate": "2026-10-03",
+      "responseDeadLine": "2026-12-01T12:00:00-05:00",
+      "type": "Presolicitation",
+      "typeOfSetAside": "8(a)",
+      "naicsCode": "334511",
+      "uiLink": "https://sam.gov/opp/fed-sam-opp-003/view",
+      "description": "Notice of intent to procure commercial off the shelf OBD-II sensor hardware and diagnostic equipment for federal civil agencies.",
+      "resourceLinks": []
+    }
+  ]
+}

@@ -130,6 +130,13 @@ Audits cost volumes, staffing plans, and statutory labor rate compliance:
 - **Under-Pricing & Non-Responsive Deficit Detection**: Flags when proposed labor rates violate statutory floors, preventing illegal wage submissions and administrative disqualification.
 - **Certified Payroll Compliance Declaration**: Auto-generates the mandatory Certified Payroll & Wage Acknowledgment Declaration rider.
 
+### 9. Live Portal Ingestion & Automated Opportunity Triage (`PortalConnectorEngine`)
+Ingests real-time procurement feeds from municipal and federal portals, executing automated pre-flight triage before proposal resource allocation:
+- **SAM.gov Opportunities API v2**: Ingests federal solicitations, presolicitations, combined synopses, and small business set-asides (8(a), WOSB, SDVOSB, HUBZone).
+- **NYC City Record Online (CROL) & OpenData**: Ingests municipal bids, RFPs, and PIN notices from New York City contracting agencies.
+- **Automated Opportunity Triage**: Instantly pipes incoming notices into `DisqualificationGuard` and `GapAnalyzer` to calculate fit scores and categorize bids into qualified and disqualified buckets.
+- **Ranked Opportunity Pipeline**: Filters opportunities against customizable qualification thresholds, exposing fatal barriers and required remediation actions.
+
 ---
 
 ## 🚀 Installation & Quick Start
@@ -186,14 +193,24 @@ govbid price tests/fixtures/sample_rfp.txt tests/fixtures/sample_staffing_plan.j
   --certified-payroll
 ```
 
-#### 7. Generate Grounded Proposal Outline with Verified Citations
+#### 7. Ingest Procurement Feeds & Triage Solicitations (SAM.gov & NYC City Record)
+```bash
+# Scan and triage SAM.gov opportunities:
+govbid scan tests/fixtures/sample_sam_gov_feed.json tests/fixtures/sample_vendor.json
+
+# Scan NYC City Record feed with fit score threshold:
+govbid scan tests/fixtures/sample_city_record_feed.json tests/fixtures/sample_vendor.json --min-score 70.0
+```
+
+#### 8. Generate Grounded Proposal Outline with Verified Citations
 ```bash
 govbid outline tests/fixtures/sample_rfp.txt tests/fixtures/sample_vendor.json
 ```
 
-#### 8. Machine-Readable JSON Output (for CI/CD Gateways)
+#### 9. Machine-Readable JSON Output (for CI/CD Gateways)
 ```bash
 govbid --json price tests/fixtures/sample_rfp.txt tests/fixtures/sample_staffing_plan.json
+govbid --json scan tests/fixtures/sample_sam_gov_feed.json tests/fixtures/sample_vendor.json
 ```
 
 ---
@@ -206,7 +223,8 @@ GovBid AI includes a comprehensive test suite running across Python 3.10, 3.11, 
 python3 -m unittest discover -s tests -v
 ```
 
-All 47 test cases validate:
+All 54 test cases validate:
+- SAM.gov v2 and NYC City Record feed ingestion, normalization, and automated opportunity triage.
 - Loaded labor rate calculations, statutory wage floor audits, and certified payroll declarations.
 - Schedule B M/WBE allocation plans, MBE/WBE demographic splits, deficit detection, and waiver memo generation.
 - Native PDF text extraction, metadata parsing, and stream error handling.

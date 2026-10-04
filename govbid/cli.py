@@ -4,6 +4,7 @@ import argparse
 import json
 import sys
 from pathlib import Path
+from govbid.connectors.portal_connector import PortalConnectorEngine
 from govbid.engines.addendum_diff import AddendumDiffEngine
 from govbid.engines.disqualification_guard import DisqualificationGuard
 from govbid.engines.gap_analyzer import GapAnalyzer
@@ -342,6 +343,71 @@ def cmd_price(args: argparse.Namespace) -> None:
     print("=" * 74)
 
 
+def cmd_scan(args: argparse.Namespace) -> None:
+    """Ingests procurement portal feeds and executes automated pre-flight opportunity triage."""
+    vendor = load_vendor(args.vendor_file)
+
+    feed_path = Path(args.feed_file)
+    if not feed_path.exists():
+        print(f"Error: Feed file not found at '{args.feed_file}'", file=sys.stderr)
+        sys.exit(1)
+
+    with open(feed_path, "r", encoding="utf-8") as f:
+        feed_data = json.load(f)
+
+    engine = PortalConnectorEngine()
+
+    # Determine source format
+    if args.source == "city_record" or (isinstance(feed_data, list) and len(feed_data) > 0 and "pin" in feed_data[0]):
+        opportunities = engine.parse_city_record_feed(feed_data)
+    else:
+        opportunities = engine.parse_sam_gov_feed(feed_data)
+
+    report = engine.triage_opportunities(
+        opportunities=opportunities,
+        vendor=vendor,
+        min_fit_score=args.min_score,
+    )
+
+    if args.json:
+        print(report.model_dump_json(indent=2))
+        return
+
+    print("=" * 76)
+    print(f"PORTAL OPPORTUNITIES SCAN & TRIAGE REPORT: {report.source.value}")
+    print("=" * 76)
+    print(f"Scan Execution Time:       {report.scan_timestamp}")
+    print(f"Total Solicitations Scanned: {report.total_scanned}")
+    print(f"Qualified Opportunities:   {report.qualified_count} (GO / CONDITIONAL_GO)")
+    print(f"Disqualified / High Risk:  {report.disqualified_count} (Fatal Disqualifiers)")
+    print()
+
+    print(f"RANKED OPPORTUNITY PIPELINE ({len(report.ranked_opportunities)} Matching Threshold):")
+    for i, res in enumerate(report.ranked_opportunities, 1):
+        opp = res.opportunity
+        rec_badge = f"[{res.recommendation} - {res.fit_score:.1f}/100]"
+        print(f"#{i} {rec_badge} {opp.title}")
+        print(f"   PIN/Notice:  {opp.solicitation_number} | Agency: {opp.agency}")
+        print(f"   Set-Aside:   {opp.set_aside.value}")
+        if opp.response_deadline:
+            print(f"   Deadline:    {opp.response_deadline}")
+        if opp.ui_link:
+            print(f"   Portal URL:  {opp.ui_link}")
+
+        if res.fatal_disqualifiers:
+            print("   🚨 FATAL DISQUALIFIERS:")
+            for disq in res.fatal_disqualifiers:
+                print(f"      • {disq}")
+
+        if res.remediable_actions and res.recommendation != "GO":
+            print("   🔧 REMEDIATION ACTIONS REQUIRED:")
+            for act in res.remediable_actions[:2]:
+                print(f"      • {act}")
+        print()
+
+    print("=" * 76)
+
+
 def main() -> None:
     """CLI entrypoint dispatcher."""
     parser = argparse.ArgumentParser(
@@ -397,6 +463,14 @@ def main() -> None:
     p_price.add_argument("--vendor-name", type=str, default=None, help="Contractor company name for certified payroll declaration")
     p_price.add_argument("--certified-payroll", action="store_true", help="Generate formal Certified Payroll Compliance Declaration")
     p_price.set_defaults(func=cmd_price)
+
+    # Subcommand: scan
+    p_scan = subparsers.add_parser("scan", help="Scan and triage live portal opportunities feed")
+    p_scan.add_argument("feed_file", help="Path to portal opportunities JSON feed file")
+    p_scan.add_argument("vendor_file", help="Path to vendor profile JSON")
+    p_scan.add_argument("--source", choices=["auto", "sam_gov", "city_record"], default="auto", help="Portal source format")
+    p_scan.add_argument("--min-score", type=float, default=0.0, help="Minimum fit score threshold to display")
+    p_scan.set_defaults(func=cmd_scan)
 
     args = parser.parse_args()
     args.func(args)

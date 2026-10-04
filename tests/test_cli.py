@@ -11,6 +11,8 @@ FIXTURES_DIR = Path(__file__).parent / "fixtures"
 RFP_PATH = str(FIXTURES_DIR / "sample_rfp.txt")
 VENDOR_PATH = str(FIXTURES_DIR / "sample_vendor.json")
 STAFFING_PATH = str(FIXTURES_DIR / "sample_staffing_plan.json")
+SAM_FEED_PATH = str(FIXTURES_DIR / "sample_sam_gov_feed.json")
+CITY_FEED_PATH = str(FIXTURES_DIR / "sample_city_record_feed.json")
 
 
 class TestGovBidCLI(unittest.TestCase):
@@ -103,6 +105,22 @@ class TestGovBidCLI(unittest.TestCase):
             self.assertTrue(data["is_fully_compliant"])
             self.assertEqual(len(data["staffing_breakdown"]), 4)
             self.assertEqual(data["total_billable_hours"], 13000.0)
+
+    def test_cli_scan(self) -> None:
+        with patch("sys.argv", ["govbid", "scan", SAM_FEED_PATH, VENDOR_PATH]), patch("sys.stdout", new_callable=io.StringIO) as mock_out:
+            main()
+            out = mock_out.getvalue()
+            self.assertIn("PORTAL OPPORTUNITIES SCAN & TRIAGE REPORT: SAM_GOV", out)
+            self.assertIn("Qualified Opportunities:", out)
+            self.assertIn("DoD Fleet Telematics & IoT Diagnostic Software Platform", out)
+
+    def test_cli_scan_json(self) -> None:
+        with patch("sys.argv", ["govbid", "--json", "scan", CITY_FEED_PATH, VENDOR_PATH]), patch("sys.stdout", new_callable=io.StringIO) as mock_out:
+            main()
+            data = json.loads(mock_out.getvalue())
+            self.assertEqual(data["source"], "NYC_CITY_RECORD")
+            self.assertEqual(data["total_scanned"], 2)
+            self.assertEqual(len(data["ranked_opportunities"]), 2)
 
 
 if __name__ == "__main__":
