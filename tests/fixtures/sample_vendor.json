@@ -38,5 +38,29 @@
       "summary": "Engineered real-time bidding auction pipelines and sub-50ms data ingestion engine on AWS EKS and ClickHouse processing high-QPS telemetry.",
       "reference_contact": "arch@sokoads.com"
     }
+  ],
+  "candidate_subcontractors": [
+    {
+      "subcontractor_id": "SUB-MWBE-001",
+      "company_name": "Apex Telematics Wiring & Field Installations LLC",
+      "certification_type": "MBE",
+      "certifying_agency": "NYC SBS",
+      "ethnicity_gender": "Hispanic American",
+      "scope_of_work": "Municipal fleet telematics hardware wiring and field installations under prevailing wage",
+      "naics_code": "238210",
+      "allocated_amount": 900000.0,
+      "percentage_of_total": 20.0
+    },
+    {
+      "subcontractor_id": "SUB-MWBE-002",
+      "company_name": "CipherShield Security & QA Services Inc.",
+      "certification_type": "WBE",
+      "certifying_agency": "NYS ESD",
+      "ethnicity_gender": "Caucasian Female",
+      "scope_of_work": "Independent penetration testing and NYC cyber security compliance auditing",
+      "naics_code": "541512",
+      "allocated_amount": 450000.0,
+      "percentage_of_total": 10.0
+    }
   ]
 }

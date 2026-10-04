@@ -67,6 +67,24 @@ class TestGovBidCLI(unittest.TestCase):
             self.assertGreaterEqual(len(data["diff_items"]), 2)
             self.assertEqual(len(data["qa_pairs"]), 3)
 
+    def test_cli_schedule_b(self) -> None:
+        with patch("sys.argv", ["govbid", "schedule-b", RFP_PATH, VENDOR_PATH]), patch("sys.stdout", new_callable=io.StringIO) as mock_out:
+            main()
+            out = mock_out.getvalue()
+            self.assertIn("SCHEDULE B M/WBE UTILIZATION AUDIT: 85626P0001", out)
+            self.assertIn("Status:                      [COMPLIANT]", out)
+            self.assertIn("Apex Telematics Wiring", out)
+            self.assertIn("CipherShield Security", out)
+
+    def test_cli_schedule_b_json(self) -> None:
+        with patch("sys.argv", ["govbid", "--json", "schedule-b", RFP_PATH, VENDOR_PATH]), patch("sys.stdout", new_callable=io.StringIO) as mock_out:
+            main()
+            data = json.loads(mock_out.getvalue())
+            self.assertEqual(data["solicitation_number"], "85626P0001")
+            self.assertEqual(data["status"], "COMPLIANT")
+            self.assertEqual(data["actual_mwbe_percentage"], 30.0)
+            self.assertEqual(len(data["allocations"]), 2)
+
 
 if __name__ == "__main__":
     unittest.main()

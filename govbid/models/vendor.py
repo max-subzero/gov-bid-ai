@@ -2,6 +2,7 @@
 
 from typing import List, Optional
 from pydantic import BaseModel, Field
+from govbid.models.mwbe import SubcontractorAllocation
 
 
 class PastPerformanceRecord(BaseModel):
@@ -30,3 +31,4 @@ class VendorProfile(BaseModel):
     certifications: List[str] = Field(default_factory=list, description="List of vendor certifications")
     active_registrations: List[str] = Field(default_factory=list, description="Active registries: NYC_PASSPORT, SAM_GOV")
     past_performance: List[PastPerformanceRecord] = Field(default_factory=list, description="Verified past performance records")
+    candidate_subcontractors: List[SubcontractorAllocation] = Field(default_factory=list, description="Pre-vetted certified M/WBE subcontractor partners")

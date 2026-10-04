@@ -58,6 +58,13 @@ flowchart TD
         H --> I["RAG Groundedness Evaluator<br/><code>Zero Hallucination Filter</code>"]
         I --> J["Grounded Outline<br/><code>Cited Past Performance</code>"]
     end
+
+    subgraph Mwbe["5. Schedule B M/WBE Subcontractor Allocator"]
+        D --> SB["ScheduleBAllocator"]
+        V --> SB
+        SB --> SBP["Schedule B Plan<br/><code>MBE/WBE Splits & Validation</code>"]
+        SB --> WM["Part III Waiver Memo<br/><code>GFE Outreach Justification</code>"]
+    end
 ```
 
 ---
@@ -101,6 +108,14 @@ Tracks post-issuance solicitation modifications and addenda:
 - **Contractual Threshold Deltas**: Automatically compares modified insurance limits, bonding tiers, and M/WBE quotas against baseline requirements.
 - **Q&A Clarification Extraction**: Parses official agency responses to bidder inquiries into structured Question/Answer pairs.
 
+### 7. Schedule B M/WBE Allocator & Pre-Bid Waiver Engine (`ScheduleBAllocator`)
+Automates municipal and state subcontractor compliance under NYC Local Law 1 and PPB rules:
+- **Goal Calculation & Sizing**: Computes exact required M/WBE spend against proposed contract values.
+- **Demographic Split Tracking**: Automatically calculates MBE vs. WBE utilization percentages.
+- **Agency Accreditation Verification**: Validates certifying agencies against recognized authorities (NYC SBS, NYS ESD, PANYNJ, SBA).
+- **Intelligent Allocation Sizing (`--recommend`)**: Distributes mandatory targets evenly across qualified candidate partners.
+- **Statutory Waiver Memo Generator**: Scaffolds formal Schedule B Part III Pre-Bid Waiver Request memorandums complete with Good Faith Efforts (GFE) outreach logs.
+
 ---
 
 ## 🚀 Installation & Quick Start
@@ -139,14 +154,23 @@ govbid evaluate tests/fixtures/sample_rfp.txt tests/fixtures/sample_vendor.json
 govbid diff tests/fixtures/sample_rfp.txt tests/fixtures/sample_addendum.txt
 ```
 
-#### 5. Generate Grounded Proposal Outline with Verified Citations
+#### 5. Calculate & Audit Schedule B M/WBE Subcontractor Plan
+```bash
+govbid schedule-b tests/fixtures/sample_rfp.txt tests/fixtures/sample_vendor.json
+# Auto-size candidate subcontractors to meet exact goal:
+govbid schedule-b tests/fixtures/sample_rfp.txt tests/fixtures/sample_vendor.json --recommend
+# Generate pre-bid waiver request memo:
+govbid schedule-b tests/fixtures/sample_rfp.txt tests/fixtures/sample_vendor.json --waiver-reason "Sole-source hardware" --waiver-memo
+```
+
+#### 6. Generate Grounded Proposal Outline with Verified Citations
 ```bash
 govbid outline tests/fixtures/sample_rfp.txt tests/fixtures/sample_vendor.json
 ```
 
-#### 6. Machine-Readable JSON Output (for CI/CD Gateways)
+#### 7. Machine-Readable JSON Output (for CI/CD Gateways)
 ```bash
-govbid --json diff tests/fixtures/sample_rfp.txt tests/fixtures/sample_addendum.txt
+govbid --json schedule-b tests/fixtures/sample_rfp.txt tests/fixtures/sample_vendor.json
 ```
 
 ---
@@ -159,7 +183,8 @@ GovBid AI includes a comprehensive test suite running across Python 3.10, 3.11, 
 python3 -m unittest discover -s tests -v
 ```
 
-All 30 test cases validate:
+All 39 test cases validate:
+- Schedule B M/WBE allocation plans, MBE/WBE demographic splits, deficit detection, and waiver memo generation.
 - Native PDF text extraction, metadata parsing, and stream error handling.
 - Addendum deadline extensions, threshold modification detection, and Q&A parsing.
 - Regex clause detection across prevailing wage, insurance, and M/WBE goals.

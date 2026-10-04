@@ -8,6 +8,8 @@ from govbid.engines.addendum_diff import AddendumDiffEngine
 from govbid.engines.disqualification_guard import DisqualificationGuard
 from govbid.engines.gap_analyzer import GapAnalyzer
 from govbid.engines.proposal_grounder import ProposalGrounder
+from govbid.engines.schedule_b_allocator import ScheduleBAllocator
+from govbid.models.rfp import ClauseCategory
 from govbid.models.vendor import VendorProfile
 from govbid.parsers.rfp_parser import RfpParser
 
@@ -191,6 +193,81 @@ def cmd_diff(args: argparse.Namespace) -> None:
     print("=" * 70)
 
 
+def cmd_schedule_b(args: argparse.Namespace) -> None:
+    """Executes Schedule B M/WBE Subcontractor Utilization Plan calculation and audit."""
+    parser = RfpParser()
+    rfp = parser.parse_file(args.rfp_file)
+    vendor = load_vendor(args.vendor_file)
+
+    # 1. Detect M/WBE Subcontracting Goal in RFP
+    mwbe_clause = next(
+        (c for c in rfp.clauses if c.category == ClauseCategory.MWBE_SUBCONTRACTING),
+        None,
+    )
+    goal_pct = mwbe_clause.threshold_value if mwbe_clause and mwbe_clause.threshold_value is not None else 30.0
+
+    # 2. Determine Total Bid Amount
+    bid_amount = args.bid_amount if args.bid_amount else (rfp.estimated_budget or 4_500_000.0)
+
+    allocator = ScheduleBAllocator()
+
+    if args.recommend and vendor.candidate_subcontractors:
+        plan = allocator.recommend_allocations(
+            solicitation_number=rfp.solicitation_number,
+            total_bid_amount=bid_amount,
+            mandatory_goal_percentage=goal_pct,
+            candidates=vendor.candidate_subcontractors,
+        )
+    else:
+        plan = allocator.calculate_plan(
+            solicitation_number=rfp.solicitation_number,
+            total_bid_amount=bid_amount,
+            mandatory_goal_percentage=goal_pct,
+            allocations=vendor.candidate_subcontractors,
+            waiver_justification=args.waiver_reason,
+        )
+
+    if args.json:
+        print(plan.model_dump_json(indent=2))
+        return
+
+    print("=" * 72)
+    print(f"SCHEDULE B M/WBE UTILIZATION AUDIT: {plan.solicitation_number}")
+    print("=" * 72)
+    print(f"Status:                      [{plan.status.value}]")
+    print(f"Total Proposed Bid:          ${plan.total_bid_amount:,.2f}")
+    print(f"Mandatory M/WBE Goal:        {plan.mandatory_goal_percentage:.1f}% (${plan.required_mwbe_amount:,.2f})")
+    print(f"Total M/WBE Committed:       {plan.actual_mwbe_percentage:.1f}% (${plan.actual_mwbe_amount:,.2f})")
+    print(f"  • MBE Share:               {plan.mbe_percentage:.1f}%")
+    print(f"  • WBE Share:               {plan.wbe_percentage:.1f}%")
+    if plan.shortfall_amount > 0:
+        print(f"Shortfall Below Goal:        ${plan.shortfall_amount:,.2f} ({plan.shortfall_percentage:.1f}%)")
+    print()
+
+    print(f"SUBCONTRACTOR ALLOCATIONS ({len(plan.allocations)}):")
+    if plan.allocations:
+        for alloc in plan.allocations:
+            print(f"  • [{alloc.certification_type.value} - {alloc.certifying_agency}] {alloc.company_name}")
+            print(f"    Amount: ${alloc.allocated_amount:,.2f} ({alloc.percentage_of_total:.1f}% of total contract)")
+            print(f"    Scope:  {alloc.scope_of_work}")
+            if alloc.naics_code:
+                print(f"    NAICS:  {alloc.naics_code}")
+            print()
+    else:
+        print("  None declared in vendor profile.\n")
+
+    if plan.validation_messages:
+        print("COMPLIANCE & RISK ALERTS:")
+        for msg in plan.validation_messages:
+            print(f"  ⚠️  {msg}")
+        print()
+
+    if args.waiver_memo or (plan.shortfall_amount > 0 and args.waiver_reason):
+        print(allocator.generate_waiver_memo(plan, vendor.name))
+
+    print("=" * 72)
+
+
 def main() -> None:
     """CLI entrypoint dispatcher."""
     parser = argparse.ArgumentParser(
@@ -228,6 +305,16 @@ def main() -> None:
     p_diff.add_argument("base_rfp", help="Path to baseline RFP file (.pdf, .txt)")
     p_diff.add_argument("addendum_file", help="Path to addendum/amendment file (.pdf, .txt)")
     p_diff.set_defaults(func=cmd_diff)
+
+    # Subcommand: schedule-b
+    p_sched = subparsers.add_parser("schedule-b", help="Calculate and validate Schedule B M/WBE utilization plan")
+    p_sched.add_argument("rfp_file", help="Path to RFP solicitation file (.pdf, .txt)")
+    p_sched.add_argument("vendor_file", help="Path to vendor profile JSON")
+    p_sched.add_argument("--bid-amount", type=float, default=None, help="Total proposal bid amount in USD")
+    p_sched.add_argument("--recommend", action="store_true", help="Auto-calculate allocations across candidate subcontractors")
+    p_sched.add_argument("--waiver-reason", type=str, default=None, help="Statutory justification for pre-bid waiver request")
+    p_sched.add_argument("--waiver-memo", action="store_true", help="Generate formal Schedule B Part III Waiver Memorandum")
+    p_sched.set_defaults(func=cmd_schedule_b)
 
     args = parser.parse_args()
     args.func(args)
