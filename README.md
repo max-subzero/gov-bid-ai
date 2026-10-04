@@ -144,4 +144,4 @@ All 19 test cases validate:
 
 ## 📄 License
 
-Licensed under the [Apache License, Version 2.0](LICENSE). Engineered by James Maxwell Ambenge.
+Licensed under the [Apache License, Version 2.0](LICENSE). Engineered by James Ambenge.

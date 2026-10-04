@@ -5,4 +5,4 @@ procurement evaluation, disqualification defense, and grounded proposal synthesi
 """
 
 __version__ = "0.1.0"
-__author__ = "James Maxwell Ambenge"
+__author__ = "James Ambenge"
